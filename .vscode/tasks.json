@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Server",
+            "type": "shell",
+            "command": "python3 -m http.server 8000",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^Serving HTTP.*",
+                    "endsPattern": "^Serving HTTP.*"
+                }
+            },
+            "presentation": {
+                "reveal": "minimal",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Run p5.js Project",
+            "type": "shell",
+            "command": "python3 -m http.server 8000 & sleep 2 && open http://localhost:8000",
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Stop Server",
+            "type": "shell",
+            "command": "killall Python || true",
+            "problemMatcher": []
+        }
+    ]
+}
