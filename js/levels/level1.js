@@ -1,6 +1,8 @@
 // Level 1 - Introduction level with teleporting platform
 
-let teleportingPlatform;
+let teleportingPlatform1;
+let teleportingPlatform2;
+let pullableBox;
 
 function setup() {
     // Create canvas
@@ -39,6 +41,16 @@ function setup() {
         'orange',                                 // Point B color
         game.platforms                            // Platform group
     );
+
+    // Create a pullable object to test the tongue mechanic
+    pullableBox = new PullableObject(width - 200, height - 100, {
+        width: 50,
+        height: 50,
+        color: 'gold'
+    });
+    
+    // Register the pullable object with the player
+    game.player.addPullableObject(pullableBox);
 }
 
 function draw() {
@@ -49,7 +61,8 @@ function draw() {
     game.showInstructions([
         'Level 1 - Use Arrow Keys or WASD to move',
         'Press Space to Jump',
-        'Press Shift to toggle the teleporting platform'
+        'Press Shift to toggle the teleporting platform',
+        'Press E to shoot tongue and grab objects'
     ]);
 
     // Update player
@@ -58,6 +71,9 @@ function draw() {
     // Update teleporting platform
     teleportingPlatform1.update();
     teleportingPlatform2.update();
+
+    // Update pullable object
+    pullableBox.update();
 
     // Check if player fell
     game.checkPlayerFell(width / 2, height / 2);
