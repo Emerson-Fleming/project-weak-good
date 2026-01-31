@@ -47,10 +47,21 @@ class Player {
         this.grapplePullSpeed = options.grapplePullSpeed || 10;
 
         // Reference to pullable objects
-        this.pullableObjects = [];
+        this.enemies = [];
 
         // Reference to platforms for collision detection
         this.platforms = null;
+
+        // Health system
+        this.healthBar = null; // Will be set externally
+        this.isInvulnerable = false; // Temporary invulnerability after being hit
+        this.invulnerabilityDuration = 1000; // ms
+
+        // Hit/damage effect settings
+        this.isHit = false;
+        this.hitFlashDuration = 300; // ms
+        this.hitFlashTime = 0;
+        this.originalColor = options.color || 'green';
 
         // Wall jump settings
         this.wallJumpForceX = options.wallJumpForceX || 6; // Horizontal push away from wall
@@ -68,8 +79,67 @@ class Player {
     }
 
     // Register pullable objects for tongue interaction
-    addPullableObject(obj) {
-        this.pullableObjects.push(obj);
+    addEnemy(obj) {
+        this.enemies.push(obj);
+    }
+
+    // Called when player is hit by a bullet
+    onHit() {
+        // Don't take damage if invulnerable
+        if (this.isInvulnerable) return;
+
+        this.isHit = true;
+        this.hitFlashTime = millis();
+        this.isInvulnerable = true;
+
+        // Reduce health
+        if (this.healthBar) {
+            this.healthBar.damage(1);
+        }
+    }
+
+    // Set the health bar reference
+    setHealthBar(healthBar) {
+        this.healthBar = healthBar;
+    }
+
+    // Draw hit flash effect
+    drawHitEffect() {
+        // Check invulnerability timer
+        if (this.isInvulnerable) {
+            let elapsed = millis() - this.hitFlashTime;
+
+            if (elapsed >= this.invulnerabilityDuration) {
+                this.isInvulnerable = false;
+                this.isHit = false;
+                this.sprite.color = this.originalColor;
+            }
+        }
+
+        if (this.isHit) {
+            let elapsed = millis() - this.hitFlashTime;
+
+            if (elapsed < this.hitFlashDuration) {
+                // Flash between white and original color
+                let flashSpeed = 0.1;
+                let flash = sin(elapsed * flashSpeed);
+
+                if (flash > 0) {
+                    this.sprite.color = 'white';
+                } else {
+                    this.sprite.color = this.originalColor;
+                }
+            } else {
+                // Flash done but still invulnerable - show slightly transparent
+                if (this.isInvulnerable) {
+                    this.sprite.color = this.originalColor;
+                    // Could add transparency here if needed
+                } else {
+                    this.isHit = false;
+                    this.sprite.color = this.originalColor;
+                }
+            }
+        }
     }
 
     // Check if player can jump (on ground or within coyote time)
@@ -185,7 +255,7 @@ class Player {
                 this.tongueLength += this.tongueSpeed;
 
                 // Check if tongue hit a pullable object
-                for (let obj of this.pullableObjects) {
+                for (let obj of this.enemies) {
                     if (obj.checkTongueHit(this.tongueEndX, this.tongueEndY)) {
                         this.tongueState = 'attached';
                         this.tongueTarget = obj;
@@ -368,6 +438,7 @@ class Player {
         this.handleMovement();
         this.handleTongue();
         this.keepInBounds();
+        this.drawHitEffect();
         this.drawTongue();
     }
 

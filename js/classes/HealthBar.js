@@ -1,0 +1,89 @@
+// HealthBar.js
+// Visual health bar display for the player
+
+class HealthBar {
+    constructor(maxHealth = 5, options = {}) {
+        this.maxHealth = maxHealth;
+        this.currentHealth = maxHealth;
+
+        // Position settings
+        this.x = options.x || 30;
+        this.y = options.y || 30;
+
+        // Visual settings
+        this.heartSize = options.heartSize || 30;
+        this.heartSpacing = options.heartSpacing || 10;
+        this.fullColor = options.fullColor || 'red';
+        this.emptyColor = options.emptyColor || 'gray';
+        this.outlineColor = options.outlineColor || 'black';
+        this.outlineWeight = options.outlineWeight || 2;
+    }
+
+    // Reduce health by amount
+    damage(amount = 1) {
+        this.currentHealth = max(0, this.currentHealth - amount);
+        return this.currentHealth;
+    }
+
+    // Heal by amount
+    heal(amount = 1) {
+        this.currentHealth = min(this.maxHealth, this.currentHealth + amount);
+        return this.currentHealth;
+    }
+
+    // Reset to full health
+    reset() {
+        this.currentHealth = this.maxHealth;
+    }
+
+    // Check if dead
+    isDead() {
+        return this.currentHealth <= 0;
+    }
+
+    // Draw a heart shape
+    drawHeart(x, y, size, filled) {
+        push();
+
+        if (filled) {
+            fill(this.fullColor);
+        } else {
+            fill(this.emptyColor);
+        }
+
+        stroke(this.outlineColor);
+        strokeWeight(this.outlineWeight);
+
+        // Simple heart shape using bezier curves
+        beginShape();
+        vertex(x, y + size * 0.3);
+        bezierVertex(x, y, x - size * 0.5, y, x - size * 0.5, y + size * 0.3);
+        bezierVertex(x - size * 0.5, y + size * 0.6, x, y + size * 0.9, x, y + size);
+        bezierVertex(x, y + size * 0.9, x + size * 0.5, y + size * 0.6, x + size * 0.5, y + size * 0.3);
+        bezierVertex(x + size * 0.5, y, x, y, x, y + size * 0.3);
+        endShape(CLOSE);
+
+        pop();
+    }
+
+    // Draw the health bar
+    draw() {
+        push();
+
+        // Draw hearts
+        for (let i = 0; i < this.maxHealth; i++) {
+            let heartX = this.x + (i * (this.heartSize + this.heartSpacing));
+            let heartY = this.y;
+            let filled = i < this.currentHealth;
+
+            this.drawHeart(heartX, heartY, this.heartSize, filled);
+        }
+
+        pop();
+    }
+
+    // Update (call in draw)
+    update() {
+        this.draw();
+    }
+}

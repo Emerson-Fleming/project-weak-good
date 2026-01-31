@@ -6,6 +6,9 @@ class Game {
         this.currentLevel = null;
         this.platforms = null;
         this.player = null;
+        this.healthBar = null;
+        this.isGameOver = false;
+        this.gameOverCallback = null; // Function to call when game over
     }
 
     // Initialize common game elements
@@ -24,7 +27,7 @@ class Game {
     }
 
     // Create a basic ground platform
-    createGround(color = 'green') {
+    createGround(color = 'brown') {
         // Store reference to ground for resizing
         if (!this.ground) {
             this.ground = new this.platforms.Sprite();
@@ -85,6 +88,71 @@ class Game {
         if (this.player && this.player.y > height + 100) {
             this.player.reset(resetX, resetY);
         }
+    }
+
+    // Create health bar
+    createHealthBar(maxHealth = 5, options = {}) {
+        this.healthBar = new HealthBar(maxHealth, options);
+        if (this.player) {
+            this.player.setHealthBar(this.healthBar);
+        }
+        return this.healthBar;
+    }
+
+    // Check if player is dead and trigger game over
+    checkGameOver() {
+        if (this.healthBar && this.healthBar.isDead() && !this.isGameOver) {
+            this.isGameOver = true;
+            return true;
+        }
+        return false;
+    }
+
+    // Draw game over screen
+    drawGameOver() {
+        if (this.isGameOver) {
+            push();
+
+            // Semi-transparent overlay
+            fill(0, 0, 0, 180);
+            rect(0, 0, width, height);
+
+            // Game Over text
+            fill(255, 0, 0);
+            textAlign(CENTER, CENTER);
+            textSize(64);
+            text('GAME OVER', width / 2, height / 2 - 50);
+
+            // Restart instruction
+            fill(255);
+            textSize(24);
+            text('Press R to Restart', width / 2, height / 2 + 20);
+
+            pop();
+
+            // Check for restart key
+            if (kb.presses('r')) {
+                this.restartLevel();
+            }
+        }
+    }
+
+    // Restart the current level
+    restartLevel() {
+        this.isGameOver = false;
+        if (this.healthBar) {
+            this.healthBar.reset();
+        }
+
+        // Call the game over callback if set (to reset level-specific objects)
+        if (this.gameOverCallback) {
+            this.gameOverCallback();
+        }
+    }
+
+    // Set a callback function to be called when restarting
+    setRestartCallback(callback) {
+        this.gameOverCallback = callback;
     }
 }
 

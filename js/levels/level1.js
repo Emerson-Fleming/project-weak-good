@@ -19,8 +19,15 @@ function setup() {
         jumpForce: 8
     });
 
+    // Create health bar
+    game.createHealthBar(5, {
+        x: 30,
+        y: 30,
+        heartSize: 30
+    });
+
     // Create ground
-    game.createGround('green');
+    game.createGround('brown');
 
     // Create teleporting platform
     teleportingPlatform1 = new TeleportingPlatform(
@@ -43,40 +50,59 @@ function setup() {
     );
 
     // Create a pullable object to test the tongue mechanic
-    pullableBox = new PullableObject(width - 200, height - 100, {
+    pullableBox = new Enemy(width - 200, height - 100, {
         width: 50,
         height: 50,
         color: 'gold'
     });
 
     // Register the pullable object with the player
-    game.player.addPullableObject(pullableBox);
+    game.player.addEnemy(pullableBox);
+
+    // Set up restart callback
+    game.setRestartCallback(() => {
+        setup(); // Restart the level
+    });
 }
 
 function draw() {
     // Background
     background(220);
 
-    // Display instructions
-    game.showInstructions([
-        'Level 1 - Use Arrow Keys or WASD to move',
-        'Press Space to Jump',
-        'Press Shift to toggle the teleporting platform',
-        'Click to shoot tongue toward cursor'
-    ]);
+    // Check for game over
+    if (!game.isGameOver) {
+        // Display instructions
+        game.showInstructions([
+            'Level 1 - Use Arrow Keys or WASD to move',
+            'Press Space to Jump',
+            'Press Shift to toggle the teleporting platform',
+            'Click to shoot tongue toward cursor'
+        ]);
 
-    // Update player
-    game.player.update();
+        // Update player
+        game.player.update();
 
-    // Update teleporting platform
-    teleportingPlatform1.update();
-    teleportingPlatform2.update();
+        // Update teleporting platform
+        teleportingPlatform1.update();
+        teleportingPlatform2.update();
 
-    // Update pullable object
-    pullableBox.update();
+        // Update pullable object
+        pullableBox.update(game.player);
 
-    // Check if player fell
-    game.checkPlayerFell(width / 2, height / 2);
+        // Check if player fell
+        game.checkPlayerFell(width - 500, height / 2);
+
+        // Check for game over
+        game.checkGameOver();
+    }
+
+    // Draw health bar (always visible)
+    if (game.healthBar) {
+        game.healthBar.update();
+    }
+
+    // Draw game over screen if dead
+    game.drawGameOver();
 }
 
 // Handle window resize

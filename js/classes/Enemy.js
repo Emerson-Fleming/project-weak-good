@@ -66,15 +66,38 @@ class Enemy {
         });
     }
 
-    // Update bullets
-    updateBullets() {
-        for (let bullet of this.bullets) {
+    // Update bullets and check collisions with player
+    updateBullets(player) {
+        let bulletsToRemove = [];
+
+        for (let i = 0; i < this.bullets.length; i++) {
+            let bullet = this.bullets[i];
             bullet.x += bullet.vx;
             bullet.y += bullet.vy;
             bullet.life--;
+
+            // Check collision with player
+            if (player) {
+                let playerLeft = player.sprite.x - player.sprite.width / 2;
+                let playerRight = player.sprite.x + player.sprite.width / 2;
+                let playerTop = player.sprite.y - player.sprite.height / 2;
+                let playerBottom = player.sprite.y + player.sprite.height / 2;
+
+                if (bullet.x >= playerLeft && bullet.x <= playerRight &&
+                    bullet.y >= playerTop && bullet.y <= playerBottom) {
+                    // Hit the player!
+                    if (player.onHit) {
+                        player.onHit();
+                    }
+                    bulletsToRemove.push(i);
+                }
+            }
         }
-        // Remove dead bullets
-        this.bullets = this.bullets.filter(b => b.life > 0);
+
+        // Remove bullets that hit or expired
+        this.bullets = this.bullets.filter((b, index) =>
+            b.life > 0 && !bulletsToRemove.includes(index)
+        );
     }
 
     // Draw bullets
@@ -109,7 +132,7 @@ class Enemy {
     // Update (call in draw)
     update(player) {
         this.drawFeedback();
-        this.updateBullets();
+        this.updateBullets(player);
         this.drawBullets();
         // Shoot at player at intervals
         if (player && millis() - this.lastShotTime > this.shootInterval) {
