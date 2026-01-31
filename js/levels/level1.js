@@ -1,8 +1,9 @@
-// Level 1 - Introduction level with teleporting platform
+// Level 1 - Jail Cell Escape
 
-let teleportingPlatform1;
-let teleportingPlatform2;
-let pullableBox;
+let jailBackWall;
+let jailCeiling;
+let jailRightWall;
+let waitingEnemy;
 
 function setup() {
     // Create canvas
@@ -12,8 +13,15 @@ function setup() {
     game.init();
     game.initializeGravity(20);
 
-    // Create player
-    game.createPlayer(width - 500, height / 2, {
+    // Jail cell dimensions
+    const jailX = 100;
+    const jailY = height - 250;
+    const jailWidth = 200;
+    const jailHeight = 200;
+    const wallThickness = 20;
+
+    // Create player inside jail cell
+    game.createPlayer(jailX + jailWidth / 2, jailY + jailHeight / 2, {
         color: 'green',
         moveSpeed: 5,
         jumpForce: 8
@@ -29,47 +37,69 @@ function setup() {
     // Create ground
     game.createGround('brown');
 
-    // Create teleporting platform
-    teleportingPlatform1 = new TeleportingPlatform(
-        { x: width - 500, y: height - 200 },       // Point A position
-        { x: width - 300, y: height - 200 },       // Point B position
-        { width: 150, height: 20 },              // Point A dimensions
-        { width: 150, height: 20 },            // Point B dimensions
-        'purple',                                 // Point A color
-        'orange',                                 // Point B color
-        game.platforms                            // Platform group
-    );
-    teleportingPlatform2 = new TeleportingPlatform(
-        { x: width - 100, y: height - 200 },       // Point A position
-        { x: (3 * width) / 2, y: height - 350 }, // Point B position
-        { width: 150, height: 20 },              // Point A dimensions
-        { width: 150, height: 20 },          // Point B dimensions
-        'purple',                                 // Point A color
-        'orange',                                 // Point B color
-        game.platforms                            // Platform group
+    // Create jail cell back wall (left side)
+    jailBackWall = new StaticPlatform(
+        jailX - wallThickness / 2,           // x position
+        jailY + jailHeight / 2,              // y position
+        wallThickness,                        // width
+        jailHeight,                           // height
+        'gray',                               // color
+        game.platforms                        // platform group
     );
 
-    // Create a pullable object to test the tongue mechanic
-    pullableBox = new Enemy(width - 200, height - 100, {
-        width: 50,
-        height: 50,
-        color: 'gold'
-    });
+    // Create jail cell ceiling
+    jailCeiling = new StaticPlatform(
+        jailX + jailWidth / 2,               // x position
+        jailY - wallThickness / 2,           // y position
+        jailWidth + wallThickness * 2,       // width (extends over walls)
+        wallThickness,                        // height
+        'darkgray',                           // color
+        game.platforms                        // platform group
+    );
 
-    // Register the pullable object with the player
-    game.player.addEnemy(pullableBox);
+    // Create jail cell right wall (teleporting platform)
+    jailRightWall = new TeleportingPlatform(
+        { x: jailX + jailWidth + wallThickness / 2, y: jailY + jailHeight / 2 },  // Point A (blocks cell)
+        { x: jailX + jailWidth + wallThickness / 2, y: jailY - 200 },             // Point B (teleports up out of way)
+        { width: wallThickness, height: jailHeight },                              // Point A dimensions
+        { width: wallThickness, height: wallThickness },                           // Point B dimensions (small when teleported)
+        'red',                                                                     // Point A color
+        'pink',                                                                    // Point B color
+        game.platforms                                                             // Platform group
+    );
+
+    // Create enemy waiting outside the jail cell
+    waitingEnemy = new Enemy(
+        jailX + jailWidth + 150,             // x position (to the right of jail)
+        jailY + jailHeight / 2,              // y position (same level as player)
+        {
+            width: 40,
+            height: 40,
+            color: 'red',
+            shootInterval: 1500,              // shoots every 1.5 seconds
+            bulletSpeed: 6,
+            bulletColor: 'darkred',
+            bulletSize: 10
+        }
+    );
+
+    // Register the enemy with the player
+    game.player.addEnemy(waitingEnemy);
 
     // Set up restart callback
     game.setRestartCallback(() => {
         // Clean up level-specific objects
-        if (pullableBox) {
-            pullableBox.remove();
+        if (jailBackWall) {
+            jailBackWall.remove();
         }
-        if (teleportingPlatform1) {
-            teleportingPlatform1.remove();
+        if (jailCeiling) {
+            jailCeiling.remove();
         }
-        if (teleportingPlatform2) {
-            teleportingPlatform2.remove();
+        if (jailRightWall) {
+            jailRightWall.remove();
+        }
+        if (waitingEnemy) {
+            waitingEnemy.remove();
         }
 
         // Restart the level
@@ -85,24 +115,23 @@ function draw() {
     if (!game.isGameOver) {
         // Display instructions
         game.showInstructions([
-            'Level 1 - Use Arrow Keys or WASD to move',
-            'Press Space to Jump',
-            'Press Shift to toggle the teleporting platform',
-            'Click to shoot tongue toward cursor'
+            'Level 1 - Jail Cell Escape!',
+            'Use Arrow Keys or WASD to move, Space to Jump',
+            'Press Shift to teleport the RED WALL and escape',
+            'Click to shoot tongue at enemies - Beware the guard outside!'
         ]);
 
         // Update player
         game.player.update();
 
-        // Update teleporting platform
-        teleportingPlatform1.update();
-        teleportingPlatform2.update();
+        // Update jail right wall (teleporting platform)
+        jailRightWall.update();
 
-        // Update pullable object
-        pullableBox.update(game.player);
+        // Update enemy (pass platforms for bullet collision detection)
+        waitingEnemy.update(game.player, game.platforms);
 
         // Check if player fell
-        game.checkPlayerFell(width - 500, height / 2);
+        game.checkPlayerFell(100 + 200 / 2, height - 250 + 200 / 2);
 
         // Check for game over
         game.checkGameOver();

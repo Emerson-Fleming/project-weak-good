@@ -66,8 +66,49 @@ class Enemy {
         });
     }
 
-    // Update bullets and check collisions with player
-    updateBullets(player) {
+    // Check if there's a clear line of sight to the target (no platforms blocking)
+    hasLineOfSight(targetX, targetY, platforms) {
+        if (!platforms) return true;
+
+        // Get the vector from enemy to target
+        let dx = targetX - this.sprite.x;
+        let dy = targetY - this.sprite.y;
+        let distance = dist(0, 0, dx, dy);
+        
+        if (distance === 0) return false;
+
+        // Normalize direction
+        let dirX = dx / distance;
+        let dirY = dy / distance;
+
+        // Check points along the line from enemy to player
+        let steps = Math.ceil(distance / 5); // Check every 5 pixels
+        
+        for (let i = 1; i < steps; i++) {
+            let checkX = this.sprite.x + (dirX * distance * i / steps);
+            let checkY = this.sprite.y + (dirY * distance * i / steps);
+
+            // Check if this point intersects any platform
+            for (let platform of platforms) {
+                let platformLeft = platform.x - platform.width / 2;
+                let platformRight = platform.x + platform.width / 2;
+                let platformTop = platform.y - platform.height / 2;
+                let platformBottom = platform.y + platform.height / 2;
+
+                if (checkX >= platformLeft && checkX <= platformRight &&
+                    checkY >= platformTop && checkY <= platformBottom) {
+                    // Line of sight is blocked!
+                    return false;
+                }
+            }
+        }
+
+        // No obstacles found
+        return true;
+    }
+
+    // Update bullets and check collisions with player and platforms
+    updateBullets(player, platforms) {
         let bulletsToRemove = [];
 
         for (let i = 0; i < this.bullets.length; i++) {
@@ -76,8 +117,25 @@ class Enemy {
             bullet.y += bullet.vy;
             bullet.life--;
 
-            // Check collision with player
-            if (player) {
+            // Check collision with platforms/walls
+            if (platforms) {
+                for (let platform of platforms) {
+                    let platformLeft = platform.x - platform.width / 2;
+                    let platformRight = platform.x + platform.width / 2;
+                    let platformTop = platform.y - platform.height / 2;
+                    let platformBottom = platform.y + platform.height / 2;
+
+                    if (bullet.x >= platformLeft && bullet.x <= platformRight &&
+                        bullet.y >= platformTop && bullet.y <= platformBottom) {
+                        // Hit a platform!
+                        bulletsToRemove.push(i);
+                        break; // Stop checking other platforms for this bullet
+                    }
+                }
+            }
+
+            // Check collision with player (only if bullet hasn't hit a platform)
+            if (!bulletsToRemove.includes(i) && player) {
                 let playerLeft = player.sprite.x - player.sprite.width / 2;
                 let playerRight = player.sprite.x + player.sprite.width / 2;
                 let playerTop = player.sprite.y - player.sprite.height / 2;
@@ -130,14 +188,17 @@ class Enemy {
     }
 
     // Update (call in draw)
-    update(player) {
+    update(player, platforms) {
         this.drawFeedback();
-        this.updateBullets(player);
+        this.updateBullets(player, platforms);
         this.drawBullets();
         // Shoot at player at intervals
         if (player && millis() - this.lastShotTime > this.shootInterval) {
-            this.shootAt(player.x, player.y);
-            this.lastShotTime = millis();
+            // Check line of sight before shooting
+            if (this.hasLineOfSight(player.x, player.y, platforms)) {
+                this.shootAt(player.x, player.y);
+                this.lastShotTime = millis();
+            }
         }
     }
 
