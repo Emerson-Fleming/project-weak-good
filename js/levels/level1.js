@@ -61,7 +61,19 @@ function setup() {
 
     // Set up restart callback
     game.setRestartCallback(() => {
-        setup(); // Restart the level
+        // Clean up level-specific objects
+        if (pullableBox) {
+            pullableBox.remove();
+        }
+        if (teleportingPlatform1) {
+            teleportingPlatform1.remove();
+        }
+        if (teleportingPlatform2) {
+            teleportingPlatform2.remove();
+        }
+
+        // Restart the level
+        setup();
     });
 }
 

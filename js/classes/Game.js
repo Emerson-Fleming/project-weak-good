@@ -140,6 +140,10 @@ class Game {
     // Restart the current level
     restartLevel() {
         this.isGameOver = false;
+
+        // Clean up all existing sprites and groups
+        this.cleanup();
+
         if (this.healthBar) {
             this.healthBar.reset();
         }
@@ -148,6 +152,24 @@ class Game {
         if (this.gameOverCallback) {
             this.gameOverCallback();
         }
+    }
+
+    // Clean up all game objects and sprites
+    cleanup() {
+        // Remove player sprite
+        if (this.player && this.player.sprite) {
+            this.player.sprite.remove();
+        }
+
+        // Remove all platforms
+        if (this.platforms) {
+            this.platforms.removeAll();
+        }
+
+        // Reset references
+        this.player = null;
+        this.platforms = null;
+        this.ground = null;
     }
 
     // Set a callback function to be called when restarting

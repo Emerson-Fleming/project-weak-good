@@ -104,4 +104,11 @@ class TeleportingPlatform {
         // Draw the alternate position outline
         this.drawAlternateOutline();
     }
+
+    // Clean up and remove the platform sprite
+    remove() {
+        if (this.sprite) {
+            this.sprite.remove();
+        }
+    }
 }

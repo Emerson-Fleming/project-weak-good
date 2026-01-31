@@ -141,6 +141,14 @@ class Enemy {
         }
     }
 
+    // Clean up and remove the enemy sprite
+    remove() {
+        if (this.sprite) {
+            this.sprite.remove();
+        }
+        this.bullets = [];
+    }
+
     // Getters for position
     get x() { return this.sprite.x; }
     get y() { return this.sprite.y; }

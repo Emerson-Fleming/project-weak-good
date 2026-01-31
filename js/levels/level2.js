@@ -46,6 +46,20 @@ function setup() {
         'lightblue',
         game.platforms
     );
+
+    // Set up restart callback
+    game.setRestartCallback(() => {
+        // Clean up level-specific objects
+        if (teleportingPlatform1) {
+            teleportingPlatform1.remove();
+        }
+        if (teleportingPlatform2) {
+            teleportingPlatform2.remove();
+        }
+
+        // Restart the level
+        setup();
+    });
 }
 
 function draw() {
