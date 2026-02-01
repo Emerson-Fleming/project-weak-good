@@ -26,7 +26,7 @@ class Game {
         world.gravity.y = gravityY;
     }
 
-    // Create a basic ground platform
+    // Create a basic ground platform with textured paper look
     createGround(color = 'brown') {
         // Store reference to ground for resizing
         if (!this.ground) {
@@ -37,7 +37,10 @@ class Game {
         this.ground.y = height - 25;
         this.ground.width = width;
         this.ground.height = 50;
-        this.ground.color = color;
+
+        // Create textured paper ground
+        let groundTexture = this.createPaperGroundTexture(width, 50);
+        this.ground.img = groundTexture;
 
         // Add resize listener only once
         if (!this._resizeListenerAdded) {
@@ -47,11 +50,105 @@ class Game {
                 this.ground.y = height - 25;
                 this.ground.width = width;
                 this.ground.height = 50;
+
+                // Regenerate texture on resize
+                let groundTexture = this.createPaperGroundTexture(width, 50);
+                this.ground.img = groundTexture;
             });
             this._resizeListenerAdded = true;
         }
 
         return this.ground;
+    }
+
+    // Create textured paper ground with multiple shades of brown
+    createPaperGroundTexture(w, h) {
+        let cnv = createGraphics(w, h);
+
+        // Base brown colors (RGB for different shades)
+        let brownShades = [
+            { r: 139, g: 90, b: 43 },   // Dark brown
+            { r: 160, g: 110, b: 60 },  // Medium-dark brown
+            { r: 180, g: 130, b: 80 },  // Medium brown
+            { r: 200, g: 150, b: 100 }, // Light-medium brown
+            { r: 210, g: 165, b: 115 }  // Light brown
+        ];
+
+        // Fill with base medium brown
+        cnv.background(180, 130, 80);
+
+        // Add organic paper texture with multiple brown shades
+        let numPatches = (w * h) / 80;
+        cnv.noStroke();
+
+        for (let i = 0; i < numPatches; i++) {
+            // Pick a random brown shade
+            let shade = random(brownShades);
+            let alpha = random(10, 30);
+            cnv.fill(shade.r, shade.g, shade.b, alpha);
+
+            let x = random(-w * 0.1, w * 1.1);
+            let y = random(-h * 0.1, h * 1.1);
+            let size = random(30, 80);
+
+            // Draw irregular organic shapes
+            cnv.push();
+            cnv.translate(x, y);
+            cnv.rotate(random(TWO_PI));
+            cnv.beginShape();
+            for (let angle = 0; angle < TWO_PI; angle += 0.5) {
+                let r = size + random(-size * 0.3, size * 0.3);
+                let px = cos(angle) * r;
+                let py = sin(angle) * r;
+                cnv.vertex(px, py);
+            }
+            cnv.endShape(CLOSE);
+            cnv.pop();
+        }
+
+        // Add paper fiber texture
+        let fiberCount = (w * h) / 40;
+        for (let i = 0; i < fiberCount; i++) {
+            // Random brown shade for fibers
+            let shade = random(brownShades);
+            cnv.stroke(shade.r, shade.g, shade.b, random(8, 20));
+            cnv.strokeWeight(random(0.5, 2));
+
+            let x = random(-w * 0.2, w * 1.2);
+            let y = random(-h * 0.2, h * 1.2);
+
+            cnv.push();
+            cnv.translate(x, y);
+            cnv.rotate(random(TWO_PI));
+
+            // Draw small curves for paper fibers
+            let curveLength = random(10, 30);
+            cnv.noFill();
+            cnv.beginShape();
+            cnv.curveVertex(0, 0);
+            cnv.curveVertex(0, 0);
+            cnv.curveVertex(curveLength * 0.3, random(-5, 5));
+            cnv.curveVertex(curveLength * 0.7, random(-5, 5));
+            cnv.curveVertex(curveLength, random(-3, 3));
+            cnv.curveVertex(curveLength, random(-3, 3));
+            cnv.endShape();
+            cnv.pop();
+        }
+
+        // Add subtle noise/grain texture
+        cnv.loadPixels();
+        for (let i = 0; i < cnv.pixels.length; i += 4) {
+            let noise = random(-8, 8);
+            cnv.pixels[i] += noise;     // R
+            cnv.pixels[i + 1] += noise; // G
+            cnv.pixels[i + 2] += noise; // B
+        }
+        cnv.updatePixels();
+
+        // Very subtle blur for organic look
+        cnv.filter(BLUR, 0.3);
+
+        return cnv;
     }
 
     // Create a static platform
