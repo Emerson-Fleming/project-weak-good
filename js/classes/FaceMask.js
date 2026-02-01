@@ -15,15 +15,14 @@ class FaceMask {
 
         // Mask rotation state (in degrees)
         // 0 = original, -90 = counter-clockwise, 90 = clockwise
-        this.maskRotation = 0;
-
-        // Images (need to be loaded in preload)
+        this.maskRotation = 0;        // Images (need to be loaded in preload)
         this.faceImg = null;
         this.maskImg = null;
 
         // Track previous input states to detect new presses
         this.shiftWasPressed = false;
         this.mouseWasPressed = false;
+        this.eWasPressed = false;
     }
 
     /**
@@ -50,6 +49,7 @@ class FaceMask {
     update() {
         const shiftPressed = keyIsDown(SHIFT);
         const mousePressed = mouseIsPressed;
+        const ePressed = keyIsDown(69); // E key code
 
         // Detect new shift press (wasn't pressed before, now is)
         if (shiftPressed && !this.shiftWasPressed) {
@@ -61,9 +61,15 @@ class FaceMask {
             this.maskRotation = 90; // Clockwise
         }
 
+        // Detect new E press (wasn't pressed before, now is)
+        if (ePressed && !this.eWasPressed) {
+            this.maskRotation = 0; // Default position
+        }
+
         // Update previous states for next frame
         this.shiftWasPressed = shiftPressed;
         this.mouseWasPressed = mousePressed;
+        this.eWasPressed = ePressed;
     }
 
     /**

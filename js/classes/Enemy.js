@@ -31,11 +31,19 @@ class Enemy {
         this.pullFriction = options.pullFriction || 0.9;
         this.hitRadius = options.hitRadius || Math.max(this.sprite.width, this.sprite.height) / 2 + 10;
         this.isTargeted = false;
-        
+
         // Enemy health
         this.maxHealth = options.maxHealth || 3;
         this.currentHealth = this.maxHealth;
         this.isDead = false;
+
+        // Set image if provided
+        if (options.img) {
+            this.sprite.img = options.img;
+            // Maintain the specified size
+            this.sprite.width = options.width || 40;
+            this.sprite.height = options.height || 40;
+        }
     }
 
     /**
@@ -69,6 +77,12 @@ class Enemy {
         this.bulletSize = options.bulletSize || 12;
         this.shootInterval = options.shootInterval || 1200;
         this.lastShotTime = millis();
+
+        // AI movement settings
+        this.moveSpeed = options.moveSpeed || 1.5; // Slow movement toward player
+        this.moveEnabled = options.moveEnabled !== false; // Can be disabled per enemy
+        this.detectionRange = options.detectionRange || 500; // How far enemy can detect player
+        this.stopDistance = options.stopDistance || 150; // Stop moving when this close to player
     }
 
     // ==================== TONGUE INTERACTION ====================
@@ -149,10 +163,10 @@ class Enemy {
      */
     takeDamage(damage = 1) {
         if (this.isDead) return;
-        
+
         this.currentHealth -= damage;
         console.log(`Enemy took ${damage} damage! Health: ${this.currentHealth}/${this.maxHealth}`);
-        
+
         if (this.currentHealth <= 0) {
             this.isDead = true;
             this.remove();
@@ -466,9 +480,14 @@ class Enemy {
     update(player, platforms) {
         // Don't update if enemy is dead
         if (this.isDead) return;
-        
+
         // Check if shield should regenerate
         this._checkShieldRegen();
+
+        // Move toward player if AI is enabled
+        if (player && this.moveEnabled) {
+            this._moveTowardPlayer(player);
+        }
 
         this.drawShield(player);
         this.drawFeedback();
@@ -481,6 +500,33 @@ class Enemy {
                 this.shootAt(player.x, player.y);
                 this.lastShotTime = millis();
             }
+        }
+    }
+
+    /**
+     * Move enemy slowly toward the player
+     * @private
+     */
+    _moveTowardPlayer(player) {
+        const dx = player.x - this.sprite.x;
+        const dy = player.y - this.sprite.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Only move if player is within detection range and outside stop distance
+        if (distance < this.detectionRange && distance > this.stopDistance) {
+            // Normalize direction and apply move speed
+            const dirX = dx / distance;
+
+            // Only move horizontally (don't fly toward player vertically)
+            this.sprite.velocity.x = dirX * this.moveSpeed;
+
+            // Flip sprite to face player (if it has mirror property)
+            if (this.sprite.mirror) {
+                this.sprite.mirror.x = dirX < 0;
+            }
+        } else {
+            // Stop moving if too close or too far
+            this.sprite.velocity.x = 0;
         }
     }
 

@@ -26,6 +26,57 @@ class Player {
         this.sprite.color = options.color || 'green';
         this.sprite.rotationLock = true;
         this.originalColor = options.color || 'green';
+
+        // Face images for different states
+        this.faceImages = {
+            full: null,      // Default state
+            mouth: null,     // When using tongue (clicking)
+            psychic: null,   // When teleporting (shift)
+            eye: null        // When attacking (E key)
+        };
+        this.currentFaceState = 'full';
+    }
+
+    /**
+     * Load face images - call this in preload()
+     */
+    static preloadFaceImages() {
+        Player.faceImagesFull = loadImage('assets/images/face-full-small.png');
+        Player.faceImagesMouth = loadImage('assets/images/face-mouth-small.png');
+        Player.faceImagesPsychic = loadImage('assets/images/face-psychic-small.png');
+        Player.faceImagesEye = loadImage('assets/images/face-eye-small.png');
+    }
+
+    /**
+     * Set the loaded face images after preload
+     */
+    setFaceImages() {
+        this.faceImages.full = Player.faceImagesFull;
+        this.faceImages.mouth = Player.faceImagesMouth;
+        this.faceImages.psychic = Player.faceImagesPsychic;
+        this.faceImages.eye = Player.faceImagesEye;
+
+        // Set initial sprite image
+        if (this.faceImages.full) {
+            this.sprite.img = this.faceImages.full;
+            // Force sprite to maintain its size (50x50)
+            this.sprite.width = 50;
+            this.sprite.height = 50;
+        }
+    }
+
+    /**
+     * Change the face image based on state
+     * @param {string} state - 'full', 'mouth', 'psychic', or 'eye'
+     */
+    setFaceState(state) {
+        if (this.faceImages[state]) {
+            this.currentFaceState = state;
+            this.sprite.img = this.faceImages[state];
+            // Force sprite to maintain its size (50x50)
+            this.sprite.width = 50;
+            this.sprite.height = 50;
+        }
     }
 
     /**
@@ -101,25 +152,60 @@ class Player {
     }
 
     /**
-     * Initialize sword attack settings
+     * Initialize bullet attack settings
      * @private
      */
     _initSword(options) {
-        this.swordLength = options.swordLength || 60;
-        this.swordWidth = options.swordWidth || 10;
-        this.swordColor = options.swordColor || 'silver';
-        this.swordDamage = options.swordDamage || 1;
-        
-        // Sword attack state
-        this.swordState = 'idle'; // 'idle', 'swinging'
-        this.swordAngle = 0;
-        this.swordSwingDuration = 300; // ms
-        this.swordSwingStartTime = 0;
-        this.swordCooldown = 500; // ms between attacks
-        this.swordLastAttackTime = 0;
-        
+        // Player bullets
+        this.bullets = [];
+        this.bulletSpeed = options.bulletSpeed || 10;
+        this.bulletColor = options.bulletColor || 'yellow';
+        this.bulletSize = options.bulletSize || 8;
+        this.bulletDamage = options.bulletDamage || 1;
+        this.bulletCooldown = 500; // ms between shots (0.5 seconds)
+        this.lastBulletTime = 0;
+
         // Track which direction player is facing
         this.facingRight = true;
+
+        // Sound effects
+        this.sounds = {
+            jump: null,
+            tongueHit: null,
+            tongueOutIn: null,
+            walkBeginning: null,
+            walkEnd: null,
+            walkMiddle: null
+        };
+
+        // Walking sound state
+        this.isWalking = false;
+        this.wasWalking = false;
+        this.walkMiddlePlaying = false;
+    }
+
+    /**
+     * Load player sound effects - call this in preload()
+     */
+    static preloadSounds() {
+        Player.soundJump = loadSound('assets/sounds/jump.wav');
+        Player.soundTongueHit = loadSound('assets/sounds/tongue hit.wav');
+        Player.soundTongueOutIn = loadSound('assets/sounds/tongue out in.wav');
+        Player.soundWalkBeginning = loadSound('assets/sounds/walk beginning.wav');
+        Player.soundWalkEnd = loadSound('assets/sounds/walk end.wav');
+        Player.soundWalkMiddle = loadSound('assets/sounds/walk middle.wav');
+    }
+
+    /**
+     * Set the loaded sound effects after preload
+     */
+    setSounds() {
+        this.sounds.jump = Player.soundJump;
+        this.sounds.tongueHit = Player.soundTongueHit;
+        this.sounds.tongueOutIn = Player.soundTongueOutIn;
+        this.sounds.walkBeginning = Player.soundWalkBeginning;
+        this.sounds.walkEnd = Player.soundWalkEnd;
+        this.sounds.walkMiddle = Player.soundWalkMiddle;
     }
 
     // ==================== SETUP ====================
@@ -330,6 +416,9 @@ class Player {
         this.tongueState = 'extending';
         this.tongueLength = 0;
 
+        // Change to mouth face
+        this.setFaceState('mouth');
+
         // Convert mouse position from screen to world coordinates
         // mouseX/mouseY are screen coords, need to add camera offset
         const worldMouseX = mouseX + (camera.x - width / 2);
@@ -380,6 +469,10 @@ class Player {
             if (obj.checkTongueHit(this.tongueEndX, this.tongueEndY)) {
                 this.tongueState = 'attached';
                 this.tongueTarget = obj;
+                // Play tongue hit sound
+                if (this.sounds.tongueHit && !this.sounds.tongueHit.isPlaying()) {
+                    this.sounds.tongueHit.play();
+                }
                 return;
             }
         }
@@ -392,6 +485,10 @@ class Player {
                     this.tongueAttachedPlatform = platform;
                     this.tongueAttachPoint.x = this.tongueEndX;
                     this.tongueAttachPoint.y = this.tongueEndY;
+                    // Play tongue hit sound
+                    if (this.sounds.tongueHit && !this.sounds.tongueHit.isPlaying()) {
+                        this.sounds.tongueHit.play();
+                    }
                     return;
                 }
             }
@@ -400,6 +497,10 @@ class Player {
         // Max length reached
         if (this.tongueLength >= this.tongueMaxLength) {
             this.tongueState = 'retracting';
+            // Play tongue out in sound (extended but didn't hit anything)
+            if (this.sounds.tongueOutIn && !this.sounds.tongueOutIn.isPlaying()) {
+                this.sounds.tongueOutIn.play();
+            }
         }
     }
 
@@ -460,6 +561,8 @@ class Player {
         if (this.tongueLength <= 0) {
             this.tongueLength = 0;
             this.tongueState = 'idle';
+            // Return to full face when tongue is idle
+            this.setFaceState('full');
         }
     }
 
@@ -535,14 +638,61 @@ class Player {
      * @private
      */
     _handleHorizontalMovement() {
+        const isMoving = keyIsDown(LEFT_ARROW) || keyIsDown(65) || keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+
         if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) {
             this.sprite.velocity.x = -this.moveSpeed;
             this.facingRight = false;
+            this.sprite.mirror.x = true; // Flip sprite to face left
+            this.isWalking = true;
         } else if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) {
             this.sprite.velocity.x = this.moveSpeed;
             this.facingRight = true;
+            this.sprite.mirror.x = false; // Normal orientation (face right)
+            this.isWalking = true;
         } else {
             this.sprite.velocity.x = 0;
+            this.isWalking = false;
+        }
+
+        // Handle walking sounds
+        this._handleWalkingSounds();
+
+        // Update previous walking state
+        this.wasWalking = this.isWalking;
+    }
+
+    /**
+     * Handle walking sound effects
+     * @private
+     */
+    _handleWalkingSounds() {
+        // Started walking (walk beginning)
+        if (this.isWalking && !this.wasWalking) {
+            if (this.sounds.walkBeginning) {
+                this.sounds.walkBeginning.play();
+            }
+            // Start walk middle loop after walk beginning finishes
+            if (this.sounds.walkMiddle) {
+                setTimeout(() => {
+                    if (this.isWalking && !this.walkMiddlePlaying) {
+                        this.sounds.walkMiddle.loop();
+                        this.walkMiddlePlaying = true;
+                    }
+                }, 200); // Small delay to let walk beginning play
+            }
+        }
+        // Stopped walking (walk end)
+        else if (!this.isWalking && this.wasWalking) {
+            // Stop walk middle loop
+            if (this.sounds.walkMiddle && this.walkMiddlePlaying) {
+                this.sounds.walkMiddle.stop();
+                this.walkMiddlePlaying = false;
+            }
+            // Play walk end
+            if (this.sounds.walkEnd) {
+                this.sounds.walkEnd.play();
+            }
         }
     }
 
@@ -557,11 +707,19 @@ class Player {
             // Regular jump
             this.sprite.velocity.y = -this.jumpForce;
             this.lastGroundedTime = 0;
+            // Play jump sound
+            if (this.sounds.jump && !this.sounds.jump.isPlaying()) {
+                this.sounds.jump.play();
+            }
         } else if (this.canWallJump()) {
             // Wall jump
             this.sprite.velocity.y = -this.wallJumpForceY;
             this.sprite.velocity.x = this.wallJumpForceX * this.lastWallDirection * -1;
             this.lastWallTime = 0;
+            // Play jump sound
+            if (this.sounds.jump && !this.sounds.jump.isPlaying()) {
+                this.sounds.jump.play();
+            }
         }
     }
 
@@ -593,96 +751,129 @@ class Player {
     // ==================== SWORD ATTACK ====================
 
     /**
-     * Handle sword attack input and logic
+     * Handle bullet attack input and logic
      */
     handleSwordAttack() {
-        // Check if E key is pressed to start attack
-        if (kb.presses('e') && this.swordState === 'idle') {
+        // Check if E key is pressed to shoot
+        if (kb.presses('e')) {
             const now = millis();
-            if (now - this.swordLastAttackTime >= this.swordCooldown) {
-                this.swordState = 'swinging';
-                this.swordSwingStartTime = now;
-                this.swordLastAttackTime = now;
-                this._performSwordAttack();
+            if (now - this.lastBulletTime >= this.bulletCooldown) {
+                this._shootBullet();
+                this.lastBulletTime = now;
+                // Change to eye face briefly
+                this.setFaceState('eye');
+                setTimeout(() => {
+                    if (this.currentFaceState === 'eye') {
+                        this.setFaceState('full');
+                    }
+                }, 100);
             }
         }
 
-        // Update sword animation
-        if (this.swordState === 'swinging') {
-            const elapsed = millis() - this.swordSwingStartTime;
-            if (elapsed >= this.swordSwingDuration) {
-                this.swordState = 'idle';
-                this.swordAngle = 0;
-            } else {
-                // Animate sword swing from -90 to 90 degrees
-                const progress = elapsed / this.swordSwingDuration;
-                this.swordAngle = map(progress, 0, 1, -90, 90);
-            }
-        }
+        // Update bullets
+        this._updateBullets();
     }
 
     /**
-     * Perform sword attack - check for enemy hits
+     * Shoot a bullet at the closest enemy
      * @private
      */
-    _performSwordAttack() {
+    _shootBullet() {
         if (!this.enemies || this.enemies.length === 0) return;
 
-        const attackRange = this.swordLength + this.sprite.width / 2;
-        const attackX = this.sprite.x + (this.facingRight ? attackRange / 2 : -attackRange / 2);
-        const attackY = this.sprite.y;
+        // Find closest alive enemy
+        let closestEnemy = null;
+        let closestDist = Infinity;
 
-        // Check each enemy for hit
         for (let enemy of this.enemies) {
-            if (!enemy.sprite) continue;
+            if (enemy.isDead || !enemy.sprite) continue;
 
-            const distance = dist(attackX, attackY, enemy.sprite.x, enemy.sprite.y);
-            
-            // Check if enemy is in range
-            if (distance < attackRange) {
-                // If enemy has shield, do nothing
-                if (enemy.hasShield) {
-                    console.log('Enemy blocked with shield!');
-                    continue;
-                }
-                
-                // Enemy has no shield, apply damage
-                if (typeof enemy.takeDamage === 'function') {
-                    enemy.takeDamage(this.swordDamage);
-                }
+            const d = dist(this.sprite.x, this.sprite.y, enemy.sprite.x, enemy.sprite.y);
+            if (d < closestDist) {
+                closestDist = d;
+                closestEnemy = enemy;
             }
         }
+
+        if (!closestEnemy) return;
+
+        // Calculate direction to closest enemy
+        const dx = closestEnemy.sprite.x - this.sprite.x;
+        const dy = closestEnemy.sprite.y - this.sprite.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance === 0) return;
+
+        // Create bullet with velocity toward enemy
+        this.bullets.push({
+            x: this.sprite.x,
+            y: this.sprite.y,
+            vx: (dx / distance) * this.bulletSpeed,
+            vy: (dy / distance) * this.bulletSpeed,
+            life: 120, // frames
+            target: closestEnemy
+        });
     }
 
     /**
-     * Draw the sword
+     * Update and check bullet collisions
+     * @private
+     */
+    _updateBullets() {
+        const bulletsToRemove = new Set();
+
+        for (let i = 0; i < this.bullets.length; i++) {
+            const bullet = this.bullets[i];
+
+            // Update position
+            bullet.x += bullet.vx;
+            bullet.y += bullet.vy;
+            bullet.life--;
+
+            // Check if bullet expired
+            if (bullet.life <= 0) {
+                bulletsToRemove.add(i);
+                continue;
+            }
+
+            // Check collision with enemies
+            for (let enemy of this.enemies) {
+                if (enemy.isDead || !enemy.sprite) continue;
+
+                const d = dist(bullet.x, bullet.y, enemy.sprite.x, enemy.sprite.y);
+
+                if (d < 25) { // Hit detection radius
+                    // If enemy has shield, do nothing
+                    if (enemy.hasShield) {
+                        console.log('Enemy blocked with shield!');
+                    } else {
+                        // Enemy has no shield, apply damage
+                        if (typeof enemy.takeDamage === 'function') {
+                            enemy.takeDamage(this.bulletDamage);
+                        }
+                    }
+                    bulletsToRemove.add(i);
+                    break;
+                }
+            }
+        }
+
+        // Remove hit/expired bullets
+        this.bullets = this.bullets.filter((b, index) => !bulletsToRemove.has(index));
+    }
+
+    /**
+     * Draw the bullets
      */
     drawSword() {
-        if (this.swordState === 'idle') return;
-
-        push();
-        translate(this.sprite.x, this.sprite.y);
-        
-        // Flip sword based on facing direction
-        if (!this.facingRight) {
-            scale(-1, 1);
+        // Draw all active bullets
+        for (let bullet of this.bullets) {
+            push();
+            fill(this.bulletColor);
+            noStroke();
+            ellipse(bullet.x, bullet.y, this.bulletSize, this.bulletSize);
+            pop();
         }
-        
-        rotate(radians(this.swordAngle));
-        
-        // Draw sword
-        stroke(50);
-        strokeWeight(2);
-        fill(this.swordColor);
-        
-        // Sword blade
-        rect(this.sprite.width / 2, -this.swordWidth / 2, this.swordLength, this.swordWidth);
-        
-        // Sword handle
-        fill(100, 50, 0);
-        rect(this.sprite.width / 2 - 10, -this.swordWidth / 2 - 2, 15, this.swordWidth + 4);
-        
-        pop();
     }
 
     /**

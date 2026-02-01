@@ -67,12 +67,25 @@ let jailBackWall;
 let jailCeiling;
 let jailRightWall;
 let waitingEnemy;
+let enemy1, enemy2, enemy3, enemy4, enemy5;
+let allEnemies = [];
 
 // Teleporting platforms for the gauntlet
 let teleportPlatform1;
 let teleportPlatform2;
 let teleportPlatform3;
 let teleportPlatform4;
+let teleportPlatform5;
+let teleportPlatform6;
+let teleportPlatform7;
+
+// Static platforms
+let staticPlatform1;
+let staticPlatform2;
+let staticPlatform3;
+let staticPlatform4;
+let staticPlatform5;
+let staticPlatform6;
 
 // Face mask display
 let faceMask;
@@ -88,6 +101,21 @@ function preload() {
 
     // Load face and mask images
     FaceMask.preloadImages('assets/images/face.png', 'assets/images/mask.png');
+
+    // Load player face images
+    Player.preloadFaceImages();
+
+    // Load player sound effects
+    Player.preloadSounds();
+
+    // Load enemy images
+    window.enemyImages = {
+        enemy1: loadImage('assets/images/enemy1-small.png'),
+        enemy2: loadImage('assets/images/enemy2-small.png'),
+        enemy3: loadImage('assets/images/enemy3-small.png'),
+        enemy4: loadImage('assets/images/enemy4-small.png'),
+        enemy5: loadImage('assets/images/enemy5-small.png')
+    };
 }
 
 function setup() {
@@ -103,7 +131,7 @@ function setup() {
         scrollThresholdLeft: 0.2,   // Scroll when player is in left 20%
         scrollSpeed: 0.15,           // Smooth following
         minX: 0,                     // Don't scroll past left edge
-        maxX: 3000 - width           // Stop scrolling at the end of the ground
+        maxX: 3500 - width           // Stop scrolling at the end of the level
     });
 
     createLevelGeometry();
@@ -137,13 +165,22 @@ function draw() {
 
         game.player.update();
         jailRightWall.update();
-        waitingEnemy.update(game.player, game.platforms);
+
+        // Update all enemies
+        allEnemies.forEach(enemy => {
+            if (enemy && !enemy.isDead) {
+                enemy.update(game.player, game.platforms);
+            }
+        });
 
         // Update teleporting platforms
         teleportPlatform1.update();
         teleportPlatform2.update();
         teleportPlatform3.update();
         teleportPlatform4.update();
+        teleportPlatform5.update();
+        teleportPlatform6.update();
+        teleportPlatform7.update();
 
         // Track ability usage for the indicator
         trackAbilityUsage();
@@ -178,6 +215,17 @@ function trackAbilityUsage() {
     // Detect shift press (teleport ability)
     if (kb.presses('shift')) {
         game.abilityIndicator.onTeleportUsed();
+        // Change player to psychic face
+        if (game.player) {
+            game.player.setFaceState('psychic');
+        }
+    }
+
+    // Detect shift release (return to full face)
+    if (kb.released('shift')) {
+        if (game.player) {
+            game.player.setFaceState('full');
+        }
     }
 
     // Detect tongue usage (mouse click while not already extending)
@@ -451,7 +499,7 @@ function createLevelGeometry() {
     const jailY = cfg.getY();
 
     // Ground - extend it to 3000 pixels wide for a linear gauntlet
-    game.createGround('brown', 3000);
+    game.createGround('brown', 3500);
 
     // Back wall (left side)
     jailBackWall = new StaticPlatform(
@@ -491,8 +539,8 @@ function createLevelGeometry() {
 
     // Platform 1 - teleports between low and high position
     teleportPlatform1 = new TeleportingPlatform(
-        { x: 600, y: groundY - 100 },
-        { x: 600, y: groundY - 250 },
+        { x: 550, y: groundY - 120 },
+        { x: 550, y: groundY - 270 },
         { width: 150, height: 20 },
         { width: 150, height: 20 },
         'brown',
@@ -502,8 +550,8 @@ function createLevelGeometry() {
 
     // Platform 2 - teleports horizontally
     teleportPlatform2 = new TeleportingPlatform(
-        { x: 850, y: groundY - 200 },
-        { x: 950, y: groundY - 200 },
+        { x: 850, y: groundY - 180 },
+        { x: 950, y: groundY - 180 },
         { width: 120, height: 20 },
         { width: 120, height: 20 },
         'brown',
@@ -513,10 +561,10 @@ function createLevelGeometry() {
 
     // Platform 3 - teleports diagonally
     teleportPlatform3 = new TeleportingPlatform(
-        { x: 1100, y: groundY - 150 },
-        { x: 1200, y: groundY - 300 },
-        { width: 150, height: 20 },
-        { width: 150, height: 20 },
+        { x: 1150, y: groundY - 140 },
+        { x: 1150, y: groundY - 320 },
+        { width: 130, height: 20 },
+        { width: 130, height: 20 },
         'brown',
         'sienna',
         game.platforms
@@ -524,14 +572,55 @@ function createLevelGeometry() {
 
     // Platform 4 - teleports between two heights
     teleportPlatform4 = new TeleportingPlatform(
-        { x: 1400, y: groundY - 180 },
-        { x: 1400, y: groundY - 350 },
+        { x: 1450, y: groundY - 160 },
+        { x: 1450, y: groundY - 360 },
         { width: 120, height: 20 },
         { width: 120, height: 20 },
         'brown',
         'sienna',
         game.platforms
     );
+
+    // Platform 5 - teleports far left and right
+    teleportPlatform5 = new TeleportingPlatform(
+        { x: 1750, y: groundY - 130 },
+        { x: 1850, y: groundY - 130 },
+        { width: 100, height: 20 },
+        { width: 100, height: 20 },
+        'brown',
+        'sienna',
+        game.platforms
+    );
+
+    // Platform 6 - teleports vertically far
+    teleportPlatform6 = new TeleportingPlatform(
+        { x: 2150, y: groundY - 120 },
+        { x: 2150, y: groundY - 380 },
+        { width: 130, height: 20 },
+        { width: 130, height: 20 },
+        'brown',
+        'sienna',
+        game.platforms
+    );
+
+    // Platform 7 - teleports diagonally upward
+    teleportPlatform7 = new TeleportingPlatform(
+        { x: 2500, y: groundY - 150 },
+        { x: 2650, y: groundY - 330 },
+        { width: 120, height: 20 },
+        { width: 120, height: 20 },
+        'brown',
+        'sienna',
+        game.platforms
+    );
+
+    // Add static platforms for variety (positioned to not overlap with teleporting platforms)
+    staticPlatform1 = new StaticPlatform(380, groundY - 150, 100, 20, 'green', game.platforms);
+    staticPlatform2 = new StaticPlatform(720, groundY - 100, 90, 20, 'green', game.platforms);
+    staticPlatform3 = new StaticPlatform(1300, groundY - 220, 110, 20, 'green', game.platforms);
+    staticPlatform4 = new StaticPlatform(1650, groundY - 280, 100, 20, 'green', game.platforms);
+    staticPlatform5 = new StaticPlatform(2000, groundY - 240, 100, 20, 'green', game.platforms);
+    staticPlatform6 = new StaticPlatform(2850, groundY - 180, 150, 20, 'green', game.platforms);
 }
 
 /**
@@ -548,28 +637,89 @@ function createLevelEntities() {
         jumpForce: playerCfg.jumpForce
     });
 
+    // Set player face images
+    game.player.setFaceImages();
+
+    // Set player sound effects
+    game.player.setSounds();
+
     // Health bar
     game.createHealthBar(5, { x: 30, y: 30, heartSize: 30 });
 
-    // Enemy
-    waitingEnemy = new Enemy(enemyCfg.getX(), enemyCfg.getY(), {
-        width: enemyCfg.width,
-        height: enemyCfg.height,
-        color: enemyCfg.color,
-        shootInterval: enemyCfg.shootInterval,
-        bulletSpeed: enemyCfg.bulletSpeed,
-        bulletColor: enemyCfg.bulletColor,
-        bulletSize: enemyCfg.bulletSize,
-        hasShield: enemyCfg.hasShield,
-        shieldHealth: enemyCfg.shieldHealth,
-        shieldColor: enemyCfg.shieldColor,
-        shieldRadius: enemyCfg.shieldRadius
+    // Create enemies with images (removed original red block enemy)
+
+    // Enemy 1 - on first static platform (HAS SHIELD)
+    enemy1 = new Enemy(380, height - 200, {
+        width: 50,
+        height: 50,
+        img: window.enemyImages.enemy1,
+        shootInterval: 2000,
+        bulletSpeed: 5,
+        bulletColor: 'purple',
+        bulletSize: 10,
+        hasShield: true,
+        shieldHealth: 3,
+        shieldColor: 'cyan'
     });
 
-    game.player.addEnemy(waitingEnemy);
-    
+    // Enemy 2 - on ground mid-level (NO SHIELD)
+    enemy2 = new Enemy(1050, height - 150, {
+        width: 50,
+        height: 50,
+        img: window.enemyImages.enemy2,
+        shootInterval: 1800,
+        bulletSpeed: 6,
+        bulletColor: 'orange',
+        bulletSize: 10,
+        hasShield: false
+    });
+
+    // Enemy 3 - on static platform (HAS SHIELD)
+    enemy3 = new Enemy(1300, height - 270, {
+        width: 50,
+        height: 50,
+        img: window.enemyImages.enemy3,
+        shootInterval: 1500,
+        bulletSpeed: 7,
+        bulletColor: 'green',
+        bulletSize: 10,
+        hasShield: true,
+        shieldHealth: 3,
+        shieldColor: 'lime'
+    });
+
+    // Enemy 4 - on high static platform (NO SHIELD)
+    enemy4 = new Enemy(1650, height - 330, {
+        width: 50,
+        height: 50,
+        img: window.enemyImages.enemy4,
+        shootInterval: 2200,
+        bulletSpeed: 5,
+        bulletColor: 'blue',
+        bulletSize: 10,
+        hasShield: false
+    });
+
+    // Enemy 5 - at the end on final platform (HAS SHIELD)
+    enemy5 = new Enemy(2850, height - 230, {
+        width: 50,
+        height: 50,
+        img: window.enemyImages.enemy5,
+        shootInterval: 1600,
+        bulletSpeed: 6,
+        bulletColor: 'red',
+        bulletSize: 10,
+        hasShield: true,
+        shieldHealth: 3,
+        shieldColor: 'pink'
+    });
+
+    // Add all enemies to the player (removed waitingEnemy)
+    allEnemies = [enemy1, enemy2, enemy3, enemy4, enemy5];
+    allEnemies.forEach(enemy => game.player.addEnemy(enemy));
+
     // Set enemies array for sword attacks
-    game.player.setEnemies([waitingEnemy]);
+    game.player.setEnemies(allEnemies);
 }
 
 /**
@@ -592,11 +742,24 @@ function cleanupLevelObjects() {
         jailBackWall,
         jailCeiling,
         jailRightWall,
-        waitingEnemy,
+        enemy1,
+        enemy2,
+        enemy3,
+        enemy4,
+        enemy5,
         teleportPlatform1,
         teleportPlatform2,
         teleportPlatform3,
-        teleportPlatform4
+        teleportPlatform4,
+        teleportPlatform5,
+        teleportPlatform6,
+        teleportPlatform7,
+        staticPlatform1,
+        staticPlatform2,
+        staticPlatform3,
+        staticPlatform4,
+        staticPlatform5,
+        staticPlatform6
     ];
 
     for (let obj of levelObjects) {

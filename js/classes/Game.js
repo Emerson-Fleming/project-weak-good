@@ -135,7 +135,7 @@ class Game {
      */
     toggleMute() {
         this.isMuted = !this.isMuted;
-        
+
         if (this.bgMusic) {
             if (this.isMuted) {
                 this.bgMusic.setVolume(0);
