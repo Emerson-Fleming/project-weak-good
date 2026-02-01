@@ -88,16 +88,21 @@ class Game {
     /**
      * Create ground platform with textured paper look
      * @param {string} color - Ground color (unused, texture applied)
+     * @param {number} groundWidth - Optional custom width (default: window width)
      * @returns {Sprite}
      */
-    createGround(color = 'brown') {
+    createGround(color = 'brown', groundWidth = null) {
         if (!this.ground) {
             this.ground = new this.platforms.Sprite();
             this.ground.collider = 'static';
         }
 
+        // Store custom width for later use
+        this.groundWidth = groundWidth;
+
         this._updateGroundPosition();
-        this.ground.img = this.createPaperGroundTexture(width, 50);
+        const actualWidth = this.groundWidth || width;
+        this.ground.img = this.createPaperGroundTexture(actualWidth, 50);
         this._setupGroundResizeListener();
 
         return this.ground;
@@ -108,9 +113,11 @@ class Game {
      * @private
      */
     _updateGroundPosition() {
-        this.ground.x = width / 2;
+        const actualWidth = this.groundWidth || width;
+        // Position ground so it starts at x=0 and extends to the right
+        this.ground.x = actualWidth / 2;
         this.ground.y = height - 25;
-        this.ground.width = width;
+        this.ground.width = actualWidth;
         this.ground.height = 50;
     }
 
@@ -123,7 +130,8 @@ class Game {
 
         window.addEventListener('resize', () => {
             this._updateGroundPosition();
-            this.ground.img = this.createPaperGroundTexture(width, 50);
+            const actualWidth = this.groundWidth || width;
+            this.ground.img = this.createPaperGroundTexture(actualWidth, 50);
         });
         this._resizeListenerAdded = true;
     }

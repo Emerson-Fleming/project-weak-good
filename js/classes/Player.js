@@ -551,10 +551,12 @@ class Player {
     }
 
     /**
-     * Keep player within canvas bounds
+     * Keep player within world bounds (optional - can set maxX to limit)
+     * @param {number} minX - Minimum x position (default 0)
+     * @param {number} maxX - Maximum x position (default unlimited)
      */
-    keepInBounds() {
-        this.sprite.x = GameUtils.clamp(this.sprite.x, 0, width);
+    keepInBounds(minX = 0, maxX = Infinity) {
+        this.sprite.x = GameUtils.clamp(this.sprite.x, minX, maxX);
     }
 
     /**

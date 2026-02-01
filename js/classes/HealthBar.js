@@ -26,14 +26,6 @@ class HealthBar {
         this.emptyColor = options.emptyColor || 'gray';
         this.outlineColor = options.outlineColor || 'black';
         this.outlineWeight = options.outlineWeight || 2;
-
-        // Texture settings
-        this.useTexture = options.useTexture !== false;
-        this.textureCache = { full: null, empty: null };
-
-        if (this.useTexture) {
-            this._generateHeartTextures();
-        }
     }
 
     // ==================== HEALTH MANAGEMENT ====================
@@ -73,124 +65,6 @@ class HealthBar {
         return this.currentHealth <= 0;
     }
 
-    // ==================== TEXTURE GENERATION ====================
-
-    /**
-     * Generate textured heart graphics
-     * @private
-     */
-    _generateHeartTextures() {
-        this.textureCache.full = this._createHeartTexture(true);
-        this.textureCache.empty = this._createHeartTexture(false);
-    }
-
-    /**
-     * Create a single textured heart
-     * @private
-     * @param {boolean} isFull - Whether it's a full (red) or empty (grey) heart
-     * @returns {Graphics}
-     */
-    _createHeartTexture(isFull) {
-        const size = this.heartSize;
-        let cnv = createGraphics(size * 1.2, size * 1.2);
-        cnv.clear();
-
-        const palette = isFull ? ColorPalettes.red : ColorPalettes.greyEmpty;
-        const baseColor = isFull ? { r: 200, g: 40, b: 40 } : { r: 100, g: 100, b: 100 };
-
-        // Draw base heart
-        cnv.fill(baseColor.r, baseColor.g, baseColor.b);
-        cnv.noStroke();
-        this._drawHeartPath(cnv, size);
-
-        // Add texture patches
-        this._addHeartTexturePatches(cnv, size, palette);
-
-        // Add texture details
-        this._addHeartTextureDetails(cnv, size, palette);
-
-        // Draw outline
-        this._drawHeartOutline(cnv, size);
-
-        return cnv;
-    }
-
-    /**
-     * Draw heart bezier path
-     * @private
-     */
-    _drawHeartPath(cnv, size) {
-        const x = size * 0.6;
-        const y = size * 0.5;
-
-        cnv.beginShape();
-        cnv.vertex(x, y + size * 0.3);
-        cnv.bezierVertex(x, y, x - size * 0.5, y, x - size * 0.5, y + size * 0.3);
-        cnv.bezierVertex(x - size * 0.5, y + size * 0.6, x, y + size * 0.9, x, y + size);
-        cnv.bezierVertex(x, y + size * 0.9, x + size * 0.5, y + size * 0.6, x + size * 0.5, y + size * 0.3);
-        cnv.bezierVertex(x + size * 0.5, y, x, y, x, y + size * 0.3);
-        cnv.endShape(CLOSE);
-    }
-
-    /**
-     * Add texture patches to heart
-     * @private
-     */
-    _addHeartTexturePatches(cnv, size, palette) {
-        const x = size * 0.6;
-        const y = size * 0.5;
-        const numPatches = 15;
-
-        cnv.noStroke();
-        for (let i = 0; i < numPatches; i++) {
-            const shade = random(palette);
-            cnv.fill(shade.r, shade.g, shade.b, random(30, 70));
-
-            const px = random(x - size * 0.4, x + size * 0.4);
-            const py = random(y + size * 0.1, y + size * 0.9);
-            const psize = random(size * 0.15, size * 0.3);
-
-            cnv.ellipse(px, py, psize, psize);
-        }
-    }
-
-    /**
-     * Add small texture details to heart
-     * @private
-     */
-    _addHeartTextureDetails(cnv, size, palette) {
-        const x = size * 0.6;
-        const y = size * 0.5;
-        const numDetails = 20;
-
-        for (let i = 0; i < numDetails; i++) {
-            const shade = random(palette);
-            cnv.stroke(shade.r, shade.g, shade.b, random(40, 80));
-            cnv.strokeWeight(random(0.5, 1.5));
-
-            const px = random(x - size * 0.3, x + size * 0.3);
-            const py = random(y + size * 0.2, y + size * 0.8);
-            const len = random(3, 8);
-            const angle = random(TWO_PI);
-
-            cnv.line(px, py, px + cos(angle) * len, py + sin(angle) * len);
-        }
-    }
-
-    /**
-     * Draw heart outline
-     * @private
-     */
-    _drawHeartOutline(cnv, size) {
-        const x = size * 0.6;
-        const y = size * 0.5;
-
-        cnv.noFill();
-        cnv.stroke(this.outlineColor);
-        cnv.strokeWeight(this.outlineWeight);
-        this._drawHeartPath(cnv, size);
-    }
-
     // ==================== DRAWING ====================
 
     /**
@@ -203,40 +77,37 @@ class HealthBar {
     drawHeart(x, y, size, filled) {
         push();
 
-        if (this.useTexture && this.textureCache.full) {
-            // Use cached texture
-            const texture = filled ? this.textureCache.full : this.textureCache.empty;
-            image(texture, x - size * 0.1, y - size * 0.05);
-        } else {
-            // Fallback to solid color
-            fill(filled ? this.fullColor : this.emptyColor);
-            stroke(this.outlineColor);
-            strokeWeight(this.outlineWeight);
+        // Basic solid color hearts
+        fill(filled ? this.fullColor : this.emptyColor);
+        stroke(this.outlineColor);
+        strokeWeight(this.outlineWeight);
 
-            beginShape();
-            vertex(x, y + size * 0.3);
-            bezierVertex(x, y, x - size * 0.5, y, x - size * 0.5, y + size * 0.3);
-            bezierVertex(x - size * 0.5, y + size * 0.6, x, y + size * 0.9, x, y + size);
-            bezierVertex(x, y + size * 0.9, x + size * 0.5, y + size * 0.6, x + size * 0.5, y + size * 0.3);
-            bezierVertex(x + size * 0.5, y, x, y, x, y + size * 0.3);
-            endShape(CLOSE);
-        }
+        beginShape();
+        vertex(x, y + size * 0.3);
+        bezierVertex(x, y, x - size * 0.5, y, x - size * 0.5, y + size * 0.3);
+        bezierVertex(x - size * 0.5, y + size * 0.6, x, y + size * 0.9, x, y + size);
+        bezierVertex(x, y + size * 0.9, x + size * 0.5, y + size * 0.6, x + size * 0.5, y + size * 0.3);
+        bezierVertex(x + size * 0.5, y, x, y, x, y + size * 0.3);
+        endShape(CLOSE);
 
         pop();
     }
 
     /**
-     * Draw the health bar (fixed to screen, not world)
+     * Draw the health bar (locked to top-left of screen)
      */
     draw() {
         push();
-        // Calculate screen position in world coordinates
-        const screenLeft = camera.x - width / 2;
-        const screenTop = camera.y - height / 2;
-
+        
+        // Calculate world coordinates that correspond to screen top-left
+        // Camera is centered, so screen top-left in world coords is:
+        const worldX = camera.x - width / 2;
+        const worldY = camera.y - height / 2;
+        
+        // Draw hearts at fixed screen position by using world coordinates
         for (let i = 0; i < this.maxHealth; i++) {
-            const heartX = screenLeft + this.x + (i * (this.heartSize + this.heartSpacing));
-            const heartY = screenTop + this.y;
+            const heartX = worldX + this.x + (i * (this.heartSize + this.heartSpacing));
+            const heartY = worldY + this.y;
             const filled = i < this.currentHealth;
             this.drawHeart(heartX, heartY, this.heartSize, filled);
         }

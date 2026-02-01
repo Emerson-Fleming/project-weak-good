@@ -58,8 +58,9 @@ let waitingEnemy;
 // ==================== LEVEL LIFECYCLE ====================
 
 function setup() {
-    createCanvas(windowWidth, windowHeight);
-
+    // Create canvas
+    new Canvas(windowWidth, windowHeight);
+    
     game.init();
     game.initializeGravity(20);
 
@@ -69,7 +70,7 @@ function setup() {
         scrollThresholdLeft: 0.2,   // Scroll when player is in left 20%
         scrollSpeed: 0.15,           // Smooth following
         minX: 0,                     // Don't scroll past left edge
-        maxX: null                   // No right limit (unlimited scrolling)
+        maxX: 3000 - width           // Stop scrolling at the end of the ground
     });
 
     createLevelGeometry();
@@ -115,8 +116,8 @@ function createLevelGeometry() {
     const cfg = Level1Config.jail;
     const jailY = cfg.getY();
 
-    // Ground
-    game.createGround('brown');
+    // Ground - extend it to 3000 pixels wide for a linear gauntlet
+    game.createGround('brown', 3000);
 
     // Back wall (left side)
     jailBackWall = new StaticPlatform(

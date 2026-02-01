@@ -75,9 +75,17 @@ class TeleportingPlatform {
 
     /**
      * Draw a dotted rectangle outline at the alternate position
+     * Draws in world coordinates - p5play camera handles viewport transformation
      */
     drawAlternateOutline() {
         const alt = this._getAlternateState();
+
+        // p5.js drawing functions don't automatically transform with camera in p5play
+        // Convert world coordinates to screen coordinates
+        const camOffsetX = camera.x - width / 2;
+        const camOffsetY = camera.y - height / 2;
+        const screenX = alt.pos.x - camOffsetX;
+        const screenY = alt.pos.y - camOffsetY;
 
         push();
         stroke(alt.color);
@@ -85,7 +93,7 @@ class TeleportingPlatform {
         noFill();
         drawingContext.setLineDash(this.outlineDashPattern);
         rectMode(CENTER);
-        rect(alt.pos.x, alt.pos.y, alt.dim.width, alt.dim.height);
+        rect(screenX, screenY, alt.dim.width, alt.dim.height);
         drawingContext.setLineDash([]);
         pop();
     }
