@@ -70,7 +70,7 @@ function setup() {
         game.platforms                                                             // Platform group
     );
 
-    // Create enemy waiting outside the jail cell
+    // Create enemy waiting outside the jail cell with shield
     waitingEnemy = new Enemy(
         jailX + jailWidth + 150,             // x position (to the right of jail)
         jailY + jailHeight / 2,              // y position (same level as player)
@@ -81,7 +81,11 @@ function setup() {
             shootInterval: 1500,              // shoots every 1.5 seconds
             bulletSpeed: 6,
             bulletColor: 'darkred',
-            bulletSize: 10
+            bulletSize: 10,
+            hasShield: true,                  // Enable shield
+            shieldHealth: 3,                  // Takes 3 tongue hits to break
+            shieldColor: 'cyan',              // Shield color
+            shieldRadius: 35                  // Shield size
         }
     );
 
@@ -120,7 +124,7 @@ function draw() {
             'Level 1 - Jail Cell Escape!',
             'Use Arrow Keys or WASD to move, Space to Jump',
             'Press Shift to teleport the RED WALL and escape',
-            'Click to shoot tongue at enemies - Beware the guard outside!'
+            'Click to shoot tongue - Break the enemy\'s shield first!'
         ]);
 
         // Update player

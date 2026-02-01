@@ -19,6 +19,16 @@ class Enemy {
         this.hitRadius = options.hitRadius || Math.max(this.sprite.width, this.sprite.height) / 2 + 10;
         this.isTargeted = false;
 
+        // Shield settings
+        this.hasShield = options.hasShield || false;
+        this.shieldHealth = options.shieldHealth || 3; // Number of tongue hits to break
+        this.currentShieldHealth = this.shieldHealth;
+        this.shieldColor = options.shieldColor || 'cyan';
+        this.shieldRadius = options.shieldRadius || Math.max(this.sprite.width, this.sprite.height) / 2 + 15;
+        this.shieldFlashing = false;
+        this.shieldFlashTime = 0;
+        this.shieldFlashDuration = 200; // ms
+
         // Enemy attack settings
         this.bullets = [];
         this.bulletSpeed = options.bulletSpeed || 8;
@@ -28,9 +38,28 @@ class Enemy {
         this.lastShotTime = millis();
     }
 
-    // Check if the tongue tip hit this object
+    // Check if the tongue tip hit this object or shield
     checkTongueHit(tongueX, tongueY) {
         let d = dist(tongueX, tongueY, this.sprite.x, this.sprite.y);
+
+        // Check if shield is hit first
+        if (this.hasShield && d < this.shieldRadius) {
+            this.isTargeted = true;
+
+            // Damage the shield
+            this.currentShieldHealth--;
+            this.shieldFlashing = true;
+            this.shieldFlashTime = millis();
+
+            // Remove shield if health depleted
+            if (this.currentShieldHealth <= 0) {
+                this.hasShield = false;
+            }
+
+            return false; // Don't grab enemy if shield is hit
+        }
+
+        // Check if enemy body is hit (only if no shield)
         let hit = d < this.hitRadius;
         this.isTargeted = hit;
         return hit;
@@ -74,7 +103,7 @@ class Enemy {
         let dx = targetX - this.sprite.x;
         let dy = targetY - this.sprite.y;
         let distance = dist(0, 0, dx, dy);
-        
+
         if (distance === 0) return false;
 
         // Normalize direction
@@ -83,7 +112,7 @@ class Enemy {
 
         // Check points along the line from enemy to player
         let steps = Math.ceil(distance / 5); // Check every 5 pixels
-        
+
         for (let i = 1; i < steps; i++) {
             let checkX = this.sprite.x + (dirX * distance * i / steps);
             let checkY = this.sprite.y + (dirY * distance * i / steps);
@@ -187,12 +216,98 @@ class Enemy {
         this.isTargeted = false;
     }
 
+    // Draw shield around enemy (oriented toward player)
+    drawShield(player) {
+        if (!this.hasShield) return;
+
+        push();
+
+        // Update flash state
+        if (this.shieldFlashing && millis() - this.shieldFlashTime > this.shieldFlashDuration) {
+            this.shieldFlashing = false;
+        }
+
+        // Calculate shield opacity based on health and flash state
+        let baseAlpha = map(this.currentShieldHealth, 0, this.shieldHealth, 50, 150);
+        let alpha = baseAlpha;
+
+        if (this.shieldFlashing) {
+            // Flash white when hit
+            alpha = 200;
+        }
+
+        // Calculate angle toward player for shield positioning
+        let angleToPlayer = 0;
+        if (player) {
+            angleToPlayer = atan2(player.sprite.y - this.sprite.y, player.sprite.x - this.sprite.x);
+        }
+
+        // Draw shield arc facing the player (semi-circle)
+        noFill();
+        strokeWeight(3);
+
+        if (this.shieldFlashing) {
+            stroke(255, 255, 255, alpha); // White flash
+        } else {
+            let r = red(this.shieldColor);
+            let g = green(this.shieldColor);
+            let b = blue(this.shieldColor);
+            stroke(r, g, b, alpha);
+        }
+
+        // Draw shield arc (180 degrees facing player)
+        translate(this.sprite.x, this.sprite.y);
+        rotate(angleToPlayer);
+
+        // Draw the shield as an arc
+        arc(0, 0, this.shieldRadius * 2, this.shieldRadius * 2, -HALF_PI, HALF_PI);
+
+        // Draw shield edges
+        let edgeLength = 15;
+        line(0, -this.shieldRadius, 0, -this.shieldRadius - edgeLength);
+        line(0, this.shieldRadius, 0, this.shieldRadius + edgeLength);
+
+        // Draw energy lines across shield
+        strokeWeight(1);
+        let numLines = 5;
+        for (let i = 1; i < numLines; i++) {
+            let t = i / numLines;
+            let arcAngle = map(t, 0, 1, -HALF_PI, HALF_PI);
+            let x1 = cos(arcAngle) * (this.shieldRadius - 10);
+            let y1 = sin(arcAngle) * (this.shieldRadius - 10);
+            let x2 = cos(arcAngle) * (this.shieldRadius + 5);
+            let y2 = sin(arcAngle) * (this.shieldRadius + 5);
+            line(x1, y1, x2, y2);
+        }
+
+        // Draw shield health indicators on the arc
+        noStroke();
+        if (this.shieldFlashing) {
+            fill(255, 255, 255, alpha);
+        } else {
+            let r = red(this.shieldColor);
+            let g = green(this.shieldColor);
+            let b = blue(this.shieldColor);
+            fill(r, g, b, alpha);
+        }
+
+        for (let i = 0; i < this.currentShieldHealth; i++) {
+            let arcAngle = map(i, 0, this.shieldHealth - 1, -HALF_PI + 0.3, HALF_PI - 0.3);
+            let x = cos(arcAngle) * (this.shieldRadius + 10);
+            let y = sin(arcAngle) * (this.shieldRadius + 10);
+            circle(x, y, 8);
+        }
+
+        pop();
+    }
+
     // Update (call in draw)
     update(player, platforms) {
+        this.drawShield(player); // Draw shield first (behind enemy), oriented toward player
         this.drawFeedback();
         this.updateBullets(player, platforms);
         this.drawBullets();
-        // Shoot at player at intervals
+        // Shoot at player at intervals (only if no shield or shield still active)
         if (player && millis() - this.lastShotTime > this.shootInterval) {
             // Check line of sight before shooting
             if (this.hasLineOfSight(player.x, player.y, platforms)) {
