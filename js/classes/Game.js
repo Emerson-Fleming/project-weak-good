@@ -157,19 +157,22 @@ class Game {
      * @param {string[]} instructions - Array of instruction lines
      */
     showInstructions(instructions = []) {
+        // Disable camera transformation for UI elements
+        camera.off();
+        
         push();
         fill(0);
         textSize(16);
         textAlign(CENTER);
 
-        // Draw in world coordinates (camera position + screen position)
-        const screenCenterX = camera.x;
-        const screenTopY = camera.y - height / 2;
-
+        // Now we can draw in pure screen coordinates
         instructions.forEach((text, index) => {
-            window.text(text, screenCenterX, screenTopY + 30 + (index * 20));
+            window.text(text, width / 2, 30 + (index * 20));
         });
         pop();
+        
+        // Re-enable camera transformation
+        camera.on();
     }
 
     /**

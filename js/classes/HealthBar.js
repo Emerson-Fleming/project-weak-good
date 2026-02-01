@@ -97,21 +97,21 @@ class HealthBar {
      * Draw the health bar (locked to top-left of screen)
      */
     draw() {
+        // Disable camera transformation for UI elements
+        camera.off();
+        
         push();
-        
-        // Calculate world coordinates that correspond to screen top-left
-        // Camera is centered, so screen top-left in world coords is:
-        const worldX = camera.x - width / 2;
-        const worldY = camera.y - height / 2;
-        
-        // Draw hearts at fixed screen position by using world coordinates
+        // Now we can draw in pure screen coordinates
         for (let i = 0; i < this.maxHealth; i++) {
-            const heartX = worldX + this.x + (i * (this.heartSize + this.heartSpacing));
-            const heartY = worldY + this.y;
+            const heartX = this.x + (i * (this.heartSize + this.heartSpacing));
+            const heartY = this.y;
             const filled = i < this.currentHealth;
             this.drawHeart(heartX, heartY, this.heartSize, filled);
         }
         pop();
+        
+        // Re-enable camera transformation
+        camera.on();
     }
 
     /**
