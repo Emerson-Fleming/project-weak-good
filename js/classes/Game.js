@@ -279,16 +279,16 @@ class Game {
     // Create textured paper background with red, black, and brown blend (optimized)
     createPaperBackground() {
         // If background already exists and size matches, just draw it
-        if (this.backgroundImage && 
-            this.backgroundImage.width === width && 
+        if (this.backgroundImage &&
+            this.backgroundImage.width === width &&
             this.backgroundImage.height === height) {
             image(this.backgroundImage, 0, 0);
             return;
         }
-        
+
         // Generate new background
         let cnv = createGraphics(width, height);
-        
+
         // Red, black, and brown color palette (reduced for performance)
         let colorPalette = [
             { r: 20, g: 10, b: 10 },      // Very dark brown
@@ -298,23 +298,23 @@ class Game {
             { r: 90, g: 20, b: 20 },      // Dark red
             { r: 130, g: 50, b: 40 }      // Burnt sienna
         ];
-        
+
         // Base color - dark red-brown
         cnv.background(60, 30, 25);
-        
+
         // Reduced number of organic patches for performance
         let numPatches = (width * height) / 3000; // Reduced from 1500
         cnv.noStroke();
-        
+
         for (let i = 0; i < numPatches; i++) {
             let shade = random(colorPalette);
             let alpha = random(20, 50);
             cnv.fill(shade.r, shade.g, shade.b, alpha);
-            
+
             let x = random(-width * 0.1, width * 1.1);
             let y = random(-height * 0.1, height * 1.1);
             let size = random(100, 250);
-            
+
             // Simplified shape with fewer vertices
             cnv.push();
             cnv.translate(x, y);
@@ -329,28 +329,122 @@ class Game {
             cnv.endShape(CLOSE);
             cnv.pop();
         }
-        
+
         // Reduced fiber count
         let fiberCount = (width * height) / 300; // Reduced from 100
         for (let i = 0; i < fiberCount; i++) {
             let shade = random(colorPalette);
             cnv.stroke(shade.r, shade.g, shade.b, random(10, 20));
             cnv.strokeWeight(random(1, 2));
-            
+
             let x = random(width);
             let y = random(height);
             let len = random(20, 40);
             let angle = random(TWO_PI);
-            
+
             // Simple line instead of curve
             cnv.line(x, y, x + cos(angle) * len, y + sin(angle) * len);
         }
-        
+
         // Cache the background
         this.backgroundImage = cnv;
-        
+
         // Draw the cached background
         image(this.backgroundImage, 0, 0);
+    }
+
+    // Create textured stone/concrete wall with shades of grey
+    createWallTexture(w, h) {
+        let cnv = createGraphics(w, h);
+
+        // Expanded grey color palette with more contrast for popping accents
+        let greyPalette = [
+            { r: 15, g: 15, b: 15 },    // Almost black (deep shadows)
+            { r: 35, g: 35, b: 35 },    // Very dark grey
+            { r: 60, g: 60, b: 60 },    // Dark grey
+            { r: 85, g: 85, b: 85 },    // Medium-dark grey
+            { r: 110, g: 110, b: 110 }, // Medium grey
+            { r: 140, g: 140, b: 140 }, // Medium-light grey
+            { r: 170, g: 170, b: 170 }, // Light grey
+            { r: 200, g: 200, b: 200 }  // Very light grey (bright highlights)
+        ];
+
+        // Base color - medium grey
+        cnv.background(90, 90, 90);
+
+        // Add organic stone texture patches with higher contrast
+        let numPatches = (w * h) / 800;
+        cnv.noStroke();
+
+        for (let i = 0; i < numPatches; i++) {
+            let shade = random(greyPalette);
+            let alpha = random(40, 80); // Increased alpha for more visible patches
+            cnv.fill(shade.r, shade.g, shade.b, alpha);
+
+            let x = random(-w * 0.1, w * 1.1);
+            let y = random(-h * 0.1, h * 1.1);
+            let size = random(w * 0.15, w * 0.3);
+
+            // Draw irregular organic shapes
+            cnv.push();
+            cnv.translate(x, y);
+            cnv.rotate(random(TWO_PI));
+            cnv.beginShape();
+            for (let angle = 0; angle < TWO_PI; angle += 0.8) {
+                let r = size + random(-size * 0.3, size * 0.3);
+                let px = cos(angle) * r;
+                let py = sin(angle) * r;
+                cnv.vertex(px, py);
+            }
+            cnv.endShape(CLOSE);
+            cnv.pop();
+        }
+
+        // Add prominent stone cracks/lines with more contrast
+        let lineCount = (w * h) / 400; // Increased density
+        for (let i = 0; i < lineCount; i++) {
+            let shade = random(greyPalette);
+            cnv.stroke(shade.r, shade.g, shade.b, random(40, 90)); // Higher alpha for visibility
+            cnv.strokeWeight(random(0.8, 2.5)); // Thicker lines
+
+            let x = random(w);
+            let y = random(h);
+            let len = random(w * 0.1, w * 0.4); // Longer lines
+            let angle = random(TWO_PI);
+
+            cnv.line(x, y, x + cos(angle) * len, y + sin(angle) * len);
+        }
+
+        // Add accent highlights and shadows (new!)
+        let accentCount = (w * h) / 600;
+        cnv.noStroke();
+        for (let i = 0; i < accentCount; i++) {
+            // Alternate between bright highlights and dark shadows
+            let isHighlight = random() > 0.5;
+            if (isHighlight) {
+                cnv.fill(200, 200, 200, random(60, 100)); // Bright white accents
+            } else {
+                cnv.fill(20, 20, 20, random(60, 100)); // Dark black accents
+            }
+
+            let x = random(w);
+            let y = random(h);
+            let size = random(3, 8);
+            cnv.circle(x, y, size);
+        }
+
+        // Add texture dots for grain with more variety
+        let dotCount = (w * h) / 120; // Increased density
+        cnv.noStroke();
+        for (let i = 0; i < dotCount; i++) {
+            let shade = random(greyPalette);
+            cnv.fill(shade.r, shade.g, shade.b, random(20, 50)); // Higher alpha
+            let x = random(w);
+            let y = random(h);
+            cnv.circle(x, y, random(1, 3)); // Slightly larger
+        }
+
+        return cnv;
     }
 }
 

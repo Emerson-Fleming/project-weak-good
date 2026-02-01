@@ -37,24 +37,26 @@ function setup() {
     // Create ground
     game.createGround('brown');
 
-    // Create jail cell back wall (left side)
+    // Create jail cell back wall (left side) with texture
     jailBackWall = new StaticPlatform(
         jailX - wallThickness / 2,           // x position
         jailY + jailHeight / 2,              // y position
         wallThickness,                        // width
         jailHeight,                           // height
         'gray',                               // color
-        game.platforms                        // platform group
+        game.platforms,                       // platform group
+        true                                  // use texture
     );
 
-    // Create jail cell ceiling
+    // Create jail cell ceiling with texture
     jailCeiling = new StaticPlatform(
         jailX + jailWidth / 2,               // x position
         jailY - wallThickness / 2,           // y position
         jailWidth + wallThickness * 2,       // width (extends over walls)
         wallThickness,                        // height
         'darkgray',                           // color
-        game.platforms                        // platform group
+        game.platforms,                       // platform group
+        true                                  // use texture
     );
 
     // Create jail cell right wall (teleporting platform)
