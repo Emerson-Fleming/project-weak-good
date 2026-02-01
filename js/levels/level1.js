@@ -90,6 +90,9 @@ let staticPlatform6;
 // Face mask display
 let faceMask;
 
+// Key collection system
+let keyManager;
+
 // ==================== LEVEL LIFECYCLE ====================
 
 /**
@@ -119,6 +122,9 @@ function preload() {
 
     // Load enemy shield mask image
     window.enemyShieldMask = loadImage('assets/images/enemy-mask.png');
+
+    // Load key/McMuffin image
+    window.mcMuffinImage = loadImage('assets/images/McMuffin.png');
 }
 
 function setup() {
@@ -185,6 +191,11 @@ function draw() {
         teleportPlatform6.update();
         teleportPlatform7.update();
 
+        // Update keys
+        if (keyManager) {
+            keyManager.update(game.player);
+        }
+
         // Track ability usage for the indicator
         trackAbilityUsage();
 
@@ -201,6 +212,15 @@ function draw() {
 
     if (game.abilityIndicator) {
         game.abilityIndicator.update();
+    }
+
+    // Draw key UI (in screen space)
+    if (keyManager) {
+        push();
+        camera.off();
+        keyManager.drawUI(30, 80);
+        camera.on();
+        pop();
     }
 
     // ===== DEBUG TOOLS =====
@@ -618,7 +638,6 @@ function createLevelGeometry() {
     );
 
     // Add static platforms for variety (positioned to not overlap with teleporting platforms)
-    staticPlatform1 = new StaticPlatform(380, groundY - 150, 100, 20, 'light', game.platforms);
     staticPlatform2 = new StaticPlatform(720, groundY - 100, 90, 20, 'medium', game.platforms);
     staticPlatform3 = new StaticPlatform(1300, groundY - 220, 110, 20, 'dark', game.platforms);
     staticPlatform4 = new StaticPlatform(1650, groundY - 280, 100, 20, 'light', game.platforms);
@@ -723,6 +742,34 @@ function createLevelEntities() {
 
     // Set enemies array for sword attacks
     game.player.setEnemies(allEnemies);
+
+    // Create keys scattered throughout the level
+    const groundY = height - 50;
+    keyManager = new KeyManager();
+
+    // Key 1 - Near the jail cell exit (easy to find)
+    keyManager.addKey(400, groundY - 80);
+
+    // Key 2 - Above first teleporting platform
+    keyManager.addKey(550, groundY - 200);
+
+    // Key 3 - On a high platform in the middle
+    keyManager.addKey(1150, groundY - 380);
+
+    // Key 4 - Near the later platforms
+    keyManager.addKey(1800, groundY - 180);
+
+    // Key 5 - At the very end of the level
+    keyManager.addKey(2700, groundY - 250);
+
+    // Set up win condition callback
+    keyManager.onAllCollected = () => {
+        console.log('All keys collected! You win!');
+        // Small delay before redirecting
+        setTimeout(() => {
+            window.location.href = 'youwin.html';
+        }, 500);
+    };
 }
 
 /**
@@ -769,6 +816,11 @@ function cleanupLevelObjects() {
         if (obj && obj.remove) {
             obj.remove();
         }
+    }
+
+    // Clean up keys
+    if (keyManager) {
+        keyManager.removeAll();
     }
 }
 
