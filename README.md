@@ -1,11 +1,13 @@
-# p5.js with p5.play Project
+# Forever Prison
+
+play game here: https://emerson-fleming.github.io/forever-prison/
 
 A modular platformer game using p5.js and the p5.play extension.
 
 ## Project Structure
 
 ```
-project-weak-good/
+forever-prison/
 ├── index.html              # Main entry point (loads current level)
 ├── sketch.js               # (Legacy reference file)
 ├── js/
