@@ -175,17 +175,11 @@ class KeyManager {
         stroke(139, 119, 42);
         strokeWeight(2);
 
-        // Mini key
-        ellipse(x + 10, y, 15, 15);
-        fill(50);
-        noStroke();
-        ellipse(x + 10, y, 5, 5);
-        fill('gold');
-        stroke(139, 119, 42);
-        strokeWeight(2);
-        rectMode(CENTER);
-        rect(x + 10, y + 12, 5, 15);
-        rect(x + 14, y + 17, 5, 3);
+        // Draw McMuffin image as the key icon
+        if (window.mcMuffinImage) {
+            imageMode(CENTER);
+            image(window.mcMuffinImage, x + 15, y, 28, 28);
+        }
 
         // Counter text
         noStroke();

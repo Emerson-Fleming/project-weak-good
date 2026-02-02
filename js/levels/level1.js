@@ -748,19 +748,19 @@ function createLevelEntities() {
     keyManager = new KeyManager();
 
     // Key 1 - Near the jail cell exit (easy to find)
-    keyManager.addKey(400, groundY - 80);
+    keyManager.addKey(800, groundY - 80);
 
     // Key 2 - Above first teleporting platform
-    keyManager.addKey(550, groundY - 200);
+    keyManager.addKey(550, 283);
 
     // Key 3 - On a high platform in the middle
     keyManager.addKey(1150, groundY - 380);
 
     // Key 4 - Near the later platforms
-    keyManager.addKey(1800, groundY - 180);
+    keyManager.addKey(1114, groundY - 180);
 
     // Key 5 - At the very end of the level
-    keyManager.addKey(2700, groundY - 250);
+    keyManager.addKey(41, 662);
 
     // Set up win condition callback
     keyManager.onAllCollected = () => {
